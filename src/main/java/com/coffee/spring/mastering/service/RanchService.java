@@ -7,6 +7,7 @@ import java.util.List;
 public interface RanchService {
 
     public List<Ranch> retrieveRanches(String name);
-    public void addRanch(String name, String city);
+    public Ranch addRanch(String name, String city);
     public Ranch getRanchByUser(String name);
+    public Ranch getRanchById(int id);
 }

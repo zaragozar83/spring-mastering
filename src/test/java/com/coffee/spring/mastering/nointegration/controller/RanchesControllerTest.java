@@ -3,6 +3,7 @@ package com.coffee.spring.mastering.nointegration.controller;
 import com.coffee.spring.mastering.controller.RanchController;
 import com.coffee.spring.mastering.domain.Ranch;
 import com.coffee.spring.mastering.service.RanchService;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
@@ -18,13 +19,15 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(RanchController.class)
 public class RanchesControllerTest {
 
     private final String RANCHES_PATH = "/ranches";
-    private final String RANCHES_WITH_USER_PATH = "/ranches/Ricardo";
+    private final String RANCHES_WITH_USER_PATH = "/ranches/name/Ricardo";
+    private final String RANCHES_BY_ID_PATH = "/ranches/1";
 
     private final String USER = "Ricardo";
 
@@ -69,6 +72,54 @@ public class RanchesControllerTest {
                 .andReturn();
 
         JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+    }
+
+    @Test
+    public void getRanchByIdTest() throws Exception {
+
+        Ranch ranchResponse = Ranch.builder()
+                .id(1)
+                .name("Ricardo")
+                .city("Pittsburgh")
+                .active(true)
+                .build();
+
+        Mockito.when(ranchService.getRanchById(ArgumentMatchers.anyInt())).thenReturn(ranchResponse);
+
+        String expected = "{\"id\": 1,\"name\": \"Ricardo\",\"city\": \"Pittsburgh\",\"active\": true}";
+
+        MvcResult result = mvc.perform(
+                MockMvcRequestBuilders.get(RANCHES_BY_ID_PATH)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JSONAssert.assertEquals(expected, result.getResponse().getContentAsString(), false);
+
+    }
+
+    @Test
+    public void createRanchTest() throws Exception {
+
+        Ranch ranchResponse = Ranch.builder()
+                                .id(4)
+                                .name("Alberth")
+                                .city("Apulco")
+                                .active(true)
+                                .build();
+        String requestRanch = "{\"name\": \"Alberth\",\"city\": \"Apulco\"}";
+
+        Mockito.when(ranchService.addRanch(ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(ranchResponse);
+
+        String expected = "{\"id\": 4,\"name\": \"Alberth\",\"city\": \"Apulco\",\"active\": true}";
+
+        mvc.perform(
+          MockMvcRequestBuilders.post(RANCHES_PATH)
+            .content(requestRanch)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", CoreMatchers.containsString("/ranches/" + ranchResponse.getId())));
+
     }
 
     private Ranch ranchByUser(String name) {
